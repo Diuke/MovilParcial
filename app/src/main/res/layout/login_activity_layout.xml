@@ -21,7 +21,7 @@
         android:id="@+id/login_user_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="User name"
+        android:hint="Username"
         android:gravity="center"
         android:layout_marginTop="20dp"
         android:layout_marginLeft="40dp"
@@ -50,7 +50,7 @@
         android:id="@+id/login_button"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:text="Accept"
+        android:text="Sign In"
         android:layout_margin="40dp"
         android:fontFamily="@font/futura_medium"
         android:background="@color/uninorteRed"
@@ -58,6 +58,17 @@
         android:textSize="18sp"
         />
 
+
+    <Button
+        android:id="@+id/login_register_button"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:layout_margin="40dp"
+        android:background="@color/uninorteRed"
+        android:fontFamily="@font/futura_medium"
+        android:text="Sign Up"
+        android:textColor="@android:color/white"
+        android:textSize="18sp" />
 
     <ImageView
         android:layout_width="wrap_content"
@@ -76,8 +87,5 @@
         android:textAlignment="center"
         android:textColor="@color/uninorteRed"
         />
-
-
-
 
 </LinearLayout>
