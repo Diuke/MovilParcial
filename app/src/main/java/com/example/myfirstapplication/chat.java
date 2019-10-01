@@ -4,7 +4,10 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -40,6 +43,13 @@ public class chat extends AppCompatActivity implements BroadcastManagerCallerInt
         }
         initializeBroadcastManagerForSocketIO();
         adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, listOfMessages);
+
+        ((Button)findViewById(R.id.buttonSend)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendMessage(((EditText)findViewById(R.id.chat_message)).getText().toString());
+            }
+        });
     }
 
     private void sendMessage(String msg){
