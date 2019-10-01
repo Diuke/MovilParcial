@@ -9,6 +9,7 @@ import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
+import com.android.volley.RequestQueue;
 import com.example.myfirstapplication.broadcast.BroadcastManager;
 import com.example.myfirstapplication.broadcast.BroadcastManagerCallerInterface;
 import com.example.myfirstapplication.database.AppDatabase;
@@ -17,6 +18,7 @@ import com.example.myfirstapplication.gps.GPSManagerCallerInterface;
 import com.example.myfirstapplication.model.Position;
 import com.example.myfirstapplication.model.User;
 import com.example.myfirstapplication.network.SocketManagementService;
+import com.example.myfirstapplication.webservice.MapService;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -53,6 +55,7 @@ import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
@@ -72,6 +75,7 @@ public class MainActivity extends AppCompatActivity
     ArrayAdapter<String> adapter ;
     boolean serviceStarted=false;
     AppDatabase appDatabase;
+    MapService mapService;
 
 
     public void initializeDataBase(){
@@ -86,7 +90,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void initializeGPSManager(){
-        gpsManager=new GPSManager(this,this);
+        gpsManager=new GPSManager(this,this, mapService);
         gpsManager.initializeLocationManager();
     }
 
@@ -130,14 +134,15 @@ public class MainActivity extends AppCompatActivity
             }
         });
         initializeDataBase();
+        initializeOSM();
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
             int[] userId = new int[1];
             userId[0] = 1;
-            List<User> list = appDatabase.UserDao().loadAllByIds(userId);
+            List<User> list = appDatabase.UserDao().getUserByUsername("demarchenac");
             if(list.size() < 1){
-                        createUser("Juan", "pjduque@uninorte.edu.co", "123456");
+                        createUser("demarchenac", "pjduque@uninorte.edu.co", "123456", "Juan ", "Duque");
                         List<User> all = appDatabase.UserDao().getAll();
                         System.out.println(list);
                         initializeGPSManager();
@@ -146,16 +151,23 @@ public class MainActivity extends AppCompatActivity
             }
             }
         });
-        initializeOSM();
+        initializeMapRealTime();
         initializeBroadcastManagerForSocketIO();
         adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, listOfMessages);
     }
 
-    public void createUser(String userName, String userEmail,String userPassword){
+    public void createUser(String username, String userEmail, String userPassword, String firstName, String lastName){
         final User user=new User();
-        user.userName=userName;
-        user.userEmail=userEmail;
-        user.password=userPassword;
+        user.username = username;
+        user.email = userEmail;
+        user.pwd = userPassword;
+        user.first_name = firstName;
+        user.last_name = lastName;
+        user.full_name = firstName + " " + lastName;
+        user.lastSeen = new Date().toString();
+        user.status = "offline";
+        user.lastLat = "";
+        user.lastLon = "";
         try {
             AsyncTask.execute(new Runnable() {
                 @Override
@@ -211,7 +223,7 @@ public class MainActivity extends AppCompatActivity
             broadcastManagerForSocketIO.sendBroadcast(SocketManagementService.CLIENT_TO_SERVER_MESSAGE,"test");
 
         } else if (id == R.id.nav_gallery) {
-            createUser("asaad","asaad@uninorte.edu.co","12345");
+
 
         } else if (id == R.id.nav_slideshow) {
             AsyncTask.execute(new Runnable() {
@@ -332,9 +344,32 @@ public class MainActivity extends AppCompatActivity
             this.mLocationOverlay.enableMyLocation();
             map.getOverlays().add(this.mLocationOverlay);
             map.getController().setZoom(15.0);
+            this.mapService = new MapService(this.getApplicationContext(), map);
         }catch (Exception error){
             Toast.makeText(this,error.getMessage(),Toast.LENGTH_SHORT).show();
 
+        }
+    }
+
+    public void initializeMapRealTime(){
+
+        try {
+            AsyncTask.execute(new Runnable() {
+                @Override
+                public void run() {
+                    while(true){
+                        mapService.getUsersLocations();
+                        try {
+                            Thread.sleep(5000);
+                        } catch (Exception error){
+                            error.printStackTrace();
+                        }
+                    }
+
+                }
+            });
+        } catch (Exception error){
+            error.printStackTrace();
         }
     }
 
@@ -370,6 +405,7 @@ public class MainActivity extends AppCompatActivity
         if(broadcastManagerForSocketIO!=null){
             broadcastManagerForSocketIO.unRegister();
         }
+        mapService.cancelAllRequests("");
         super.onDestroy();
     }
 }
