@@ -9,23 +9,24 @@ import java.util.Date;
 
 
 @Entity(foreignKeys = @ForeignKey(entity = User.class,
-        parentColumns = "user_id",
-        childColumns = "user_id"))
+        parentColumns = "username",
+        childColumns = "username"))
 public class Position {
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "position_id")
     public int position_id;
 
     @ColumnInfo(name = "lat")
-    public double latitude;
+    public String lat;
 
-    @ColumnInfo(name = "lng")
-    public double longitude;
+    @ColumnInfo(name = "lon")
+    public String lon;
 
-    @ColumnInfo(name = "user_id")
-    public int user_id;
+    @ColumnInfo(name = "username")
+    public String username;
 
-    @ColumnInfo(name = "timestamp")
-    public Date timestamp;
+    @ColumnInfo(name = "location_timestamp")
+    public String location_timestamp;
+
 
 }

@@ -16,6 +16,7 @@ import androidx.room.Room;
 
 import com.example.myfirstapplication.database.AppDatabase;
 import com.example.myfirstapplication.model.Position;
+import com.example.myfirstapplication.webservice.MapService;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,17 +30,20 @@ public class GPSManager implements LocationListener {
     LocationManager locationManager;
 
     AppDatabase appDatabase;
-    int userId = 1;
+    String username = "demarchenac";
 
     Location actualLocation;
     Location lastTrack;
 
+    MapService mapService;
+
     public GPSManager(Activity activity,
-                      GPSManagerCallerInterface caller) {
+                      GPSManagerCallerInterface caller, MapService mapService) {
         this.activity = activity;
         this.caller = caller;
         this.actualLocation = null;
         this.lastTrack = null;
+        this.mapService = mapService;
     }
 
     public void initializeLocationManager() {
@@ -84,7 +88,7 @@ public class GPSManager implements LocationListener {
                     0, 10, this, Looper.getMainLooper());
             actualLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
             lastTrack = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-            //this.saveLocation(actualLocation);
+            this.saveLocation(actualLocation);
 
         }catch (Exception error){
             caller.gpsErrorHasBeenThrown(error);
@@ -93,18 +97,19 @@ public class GPSManager implements LocationListener {
 
     public void saveLocation(Location location){
         final Position position = new Position();
-        position.latitude = location.getLatitude();
-        position.longitude = location.getLongitude();
-        position.timestamp = new Date();
-        position.user_id = this.userId;
+        position.lat = ""+location.getLatitude();
+        position.lon = ""+location.getLongitude();
+        position.location_timestamp = new Date().toString();
+        position.username = this.username;
         try {
             AsyncTask.execute(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         appDatabase.PositionDao().insertAll(position);
+                        mapService.sendLocation(Double.parseDouble(position.lat), Double.parseDouble(position.lon), position.username);
                         List<Position> list = appDatabase.PositionDao().getAll();
-                        System.out.println(list);
+                         System.out.println(list);
                     } catch (Exception error){
                         error.printStackTrace();
                     }
