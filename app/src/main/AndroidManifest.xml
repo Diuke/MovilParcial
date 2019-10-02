@@ -14,10 +14,14 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/AppTheme">
+
         <service
             android:name=".network.SocketManagementService"
             android:exported="true"></service>
+
+        <service android:enabled="true" android:name=".webservice.MapService" />
 
         <activity
             android:name=".MainActivity"

@@ -17,8 +17,8 @@ public interface PositionDao {
     @Query("select * from Position  WHERE position_id = :positionId")
     List<Position> getPositionById(int positionId);
 
-    @Query("select * from Position  WHERE user_id = :user_id")
-    List<Position> getPositionsByUserId(int user_id);
+    @Query("select * from Position  WHERE username = :username")
+    List<Position> getPositionsByUsername(int username);
 
     @Insert
     void insertAll(Position... position);
