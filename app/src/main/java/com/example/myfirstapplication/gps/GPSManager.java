@@ -18,12 +18,11 @@ import android.widget.Toast;
 
 import androidx.room.Room;
 
-import com.example.myfirstapplication.MainActivity;
 import com.example.myfirstapplication.database.AppDatabase;
 import com.example.myfirstapplication.model.Position;
+import com.example.myfirstapplication.model.Session;
 import com.example.myfirstapplication.webservice.MapService;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -35,7 +34,8 @@ public class GPSManager implements LocationListener {
     LocationManager locationManager;
 
     AppDatabase appDatabase;
-    String username = "demarchenac";
+    String username;
+    Session session;
 
     Location actualLocation;
     Location lastTrack;
@@ -48,6 +48,8 @@ public class GPSManager implements LocationListener {
         this.caller = caller;
         this.actualLocation = null;
         this.lastTrack = null;
+        Session session = new Session(activity.getApplicationContext());
+        username = session.getUsername();
     }
 
     public void initializeLocationManager() {

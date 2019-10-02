@@ -55,7 +55,7 @@ public class chat extends AppCompatActivity implements BroadcastManagerCallerInt
     private void sendMessage(String msg){
         if (serviceStarted){
             if (broadcastManagerForSocketIO != null){
-                broadcastManagerForSocketIO.sendBroadcast(SocketManagementService.CLIENT_TO_SERVER_MESSAGE,msg+"");
+                broadcastManagerForSocketIO.sendBroadcast(SocketManagementService.CLIENT_TO_SERVER_MESSAGE,"C"+msg);
             }
         }
     }
