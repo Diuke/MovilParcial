@@ -21,6 +21,8 @@
             android:name=".network.SocketManagementService"
             android:exported="true"></service>
 
+        <service android:enabled="true" android:name=".webservice.MapService" />
+
         <activity
             android:name=".MainActivity"
             android:label="@string/title_activity_main"

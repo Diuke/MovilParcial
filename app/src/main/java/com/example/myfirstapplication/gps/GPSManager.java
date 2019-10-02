@@ -3,17 +3,21 @@ package com.example.myfirstapplication.gps;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
+import android.os.ResultReceiver;
 import android.widget.Toast;
 
 import androidx.room.Room;
 
+import com.example.myfirstapplication.MainActivity;
 import com.example.myfirstapplication.database.AppDatabase;
 import com.example.myfirstapplication.model.Position;
 import com.example.myfirstapplication.webservice.MapService;
@@ -35,15 +39,14 @@ public class GPSManager implements LocationListener {
     Location actualLocation;
     Location lastTrack;
 
-    MapService mapService;
+    ResponseResultReceiver response;
 
     public GPSManager(Activity activity,
-                      GPSManagerCallerInterface caller, MapService mapService) {
+                      GPSManagerCallerInterface caller) {
         this.activity = activity;
         this.caller = caller;
         this.actualLocation = null;
         this.lastTrack = null;
-        this.mapService = mapService;
     }
 
     public void initializeLocationManager() {
@@ -63,7 +66,7 @@ public class GPSManager implements LocationListener {
             }
 
         }catch (Exception error){
-            caller.gpsErrorHasBeenThrown(error);
+            error.printStackTrace();
         }
     }
 
@@ -91,7 +94,8 @@ public class GPSManager implements LocationListener {
             this.saveLocation(actualLocation);
 
         }catch (Exception error){
-            caller.gpsErrorHasBeenThrown(error);
+            error.printStackTrace();
+            //caller.gpsErrorHasBeenThrown(error);
         }
     }
 
@@ -102,12 +106,21 @@ public class GPSManager implements LocationListener {
         position.location_timestamp = new Date().toString();
         position.username = this.username;
         try {
+            response = new ResponseResultReceiver(new Handler());
+            Intent serviceIntent = new Intent(activity.getApplicationContext(), MapService.class);
+            serviceIntent.putExtra("action", "SEND_LOCATION");
+            serviceIntent.putExtra("lat", position.lat);
+            serviceIntent.putExtra("lon", position.lon);
+            serviceIntent.putExtra("username", username);
+            serviceIntent.putExtra("receiver", response);
+            activity.startService(serviceIntent);
+
             AsyncTask.execute(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         appDatabase.PositionDao().insertAll(position);
-                        mapService.sendLocation(Double.parseDouble(position.lat), Double.parseDouble(position.lon), position.username);
+
                         List<Position> list = appDatabase.PositionDao().getAll();
                          System.out.println(list);
                     } catch (Exception error){
@@ -149,4 +162,34 @@ public class GPSManager implements LocationListener {
     public void onProviderDisabled(String s) {
 
     }
+
+
+    private class ResponseResultReceiver extends ResultReceiver {
+        public ResponseResultReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData) {
+            switch (resultCode){
+                case MapService.ERROR:{
+                    Toast.makeText(activity, resultData.getString("response"), Toast.LENGTH_LONG).show();
+                    break;
+                }
+
+                case MapService.SUCCESS_SEND_LOCATION: {
+                    Toast.makeText(activity, "Location Updated", Toast.LENGTH_LONG).show();
+                    break;
+                }
+
+                case MapService.SUCCESS_GET_USERS_LOCATIONS: {
+                    break;
+                }
+            }
+            super.onReceiveResult(resultCode, resultData);
+        }
+    }
+
 }
+
+

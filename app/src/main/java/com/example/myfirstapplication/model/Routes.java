@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 public class Routes {
     public HashMap<String, String> routes = new HashMap<>();
-    public String url = "http://192.168.43.187/MovilAPI/api";
+    public String url = "http://10.20.42.150/MovilAPI/api";
 
     public Routes(){
         routes.put("LOCATION", url+"/locations");

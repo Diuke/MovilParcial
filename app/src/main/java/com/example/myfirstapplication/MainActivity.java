@@ -17,6 +17,7 @@ import com.example.myfirstapplication.gps.GPSManager;
 import com.example.myfirstapplication.gps.GPSManagerCallerInterface;
 import com.example.myfirstapplication.model.Position;
 import com.example.myfirstapplication.model.User;
+import com.example.myfirstapplication.model.UserView;
 import com.example.myfirstapplication.network.SocketManagementService;
 import com.example.myfirstapplication.webservice.MapService;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -61,6 +62,8 @@ import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -77,6 +80,9 @@ public class MainActivity extends AppCompatActivity
     AppDatabase appDatabase;
     MapService mapService;
 
+    HashMap<String, UserView> users;
+    HashSet<String> usernames;
+
 
     public void initializeDataBase(){
         try{
@@ -90,7 +96,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void initializeGPSManager(){
-        gpsManager=new GPSManager(this,this, mapService);
+        gpsManager=new GPSManager(this,this);
         gpsManager.initializeLocationManager();
     }
 
@@ -168,6 +174,7 @@ public class MainActivity extends AppCompatActivity
         user.status = "offline";
         user.lastLat = "";
         user.lastLon = "";
+
         try {
             AsyncTask.execute(new Runnable() {
                 @Override
@@ -276,28 +283,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void gpsErrorHasBeenThrown(final Exception error) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                AlertDialog.Builder builder=
-                        new AlertDialog.
-                                Builder(getApplicationContext());
-                builder.setTitle("GPS Error")
-                        .setMessage(error.getMessage())
-                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                //TODO
-                            }
-                        });
-                builder.show();
-            }
-        });
-
-    }
-
-    @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if(requestCode==1001){
             if(grantResults[0]== PackageManager.PERMISSION_GRANTED){
@@ -344,7 +329,6 @@ public class MainActivity extends AppCompatActivity
             this.mLocationOverlay.enableMyLocation();
             map.getOverlays().add(this.mLocationOverlay);
             map.getController().setZoom(15.0);
-            this.mapService = new MapService(this.getApplicationContext(), map);
         }catch (Exception error){
             Toast.makeText(this,error.getMessage(),Toast.LENGTH_SHORT).show();
 
@@ -357,14 +341,14 @@ public class MainActivity extends AppCompatActivity
             AsyncTask.execute(new Runnable() {
                 @Override
                 public void run() {
-                    while(true){
+                    /*while(true){
                         mapService.getUsersLocations();
                         try {
                             Thread.sleep(5000);
                         } catch (Exception error){
                             error.printStackTrace();
                         }
-                    }
+                    }*/
 
                 }
             });

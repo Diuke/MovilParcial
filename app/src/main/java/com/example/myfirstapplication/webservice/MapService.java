@@ -1,7 +1,13 @@
 package com.example.myfirstapplication.webservice;
 
+import android.app.IntentService;
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.ResultReceiver;
+
+import androidx.annotation.Nullable;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -28,26 +34,47 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 
-public class MapService {
+public class MapService extends IntentService {
+    public final static int ERROR = 1;
+    public final static int SUCCESS_SEND_LOCATION = 2;
+    public final static int SUCCESS_GET_USERS_LOCATIONS = 3;
+
     RequestQueue rq;
-    RequestQueue realtimeRq;
     Routes routes;
     MapView map;
     Context context;
+
     HashMap<String, UserView> users;
     HashSet<String> usernames;
 
-    public MapService(Context context, MapView map){
-        this.rq = Volley.newRequestQueue(context);
-        this.realtimeRq = Volley.newRequestQueue(context);
-        this.routes = new Routes();
-        this.map = map;
-        this.context = context;
-        users = new HashMap<>();
-        usernames = new HashSet<>();
+
+    @Override
+    protected void onHandleIntent(@Nullable Intent intent) {
+        routes = new Routes();
+        final ResultReceiver receiver = intent.getParcelableExtra("receiver");
+        String action = intent.getStringExtra("action");
+        this.rq = Volley.newRequestQueue(getApplicationContext());
+        switch (action){
+            case "GET_USERS": {
+                System.out.println("");
+                break;
+            }
+
+            case "SEND_LOCATION": {
+                double lat = Double.parseDouble(intent.getStringExtra("lat"));
+                double lon = Double.parseDouble(intent.getStringExtra("lon"));
+                String username = intent.getStringExtra("username");
+                sendLocation(lat, lon, username, receiver);
+                break;
+            }
+        }
+
+    }
+
+    public MapService(){
+        super("MapService");
     }
 
     public void updateMarker(UserView user){
@@ -105,10 +132,10 @@ public class MapService {
                         error.printStackTrace();
                     }
                 });
-        realtimeRq.add(req);
+        rq.add(req);
     }
 
-    public void sendLocation(double lat, double lon, String username){
+    public void sendLocation(double lat, double lon, String username, final ResultReceiver receiver){
         try {
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
             JSONObject body = new JSONObject();
@@ -123,12 +150,18 @@ public class MapService {
                         @Override
                         public void onResponse(JSONObject response) {
                             System.out.println(response);
+                            Bundle bundle = new Bundle();
+                            bundle.putString("response", "SUCCESS");
+                            receiver.send(SUCCESS_SEND_LOCATION, bundle);
                         }
                     },
                     new Response.ErrorListener() {
                         @Override
                         public void onErrorResponse(VolleyError error) {
                             System.out.println(error.getMessage());
+                            Bundle bundle = new Bundle();
+                            bundle.putString("response", error.getMessage());
+                            receiver.send(SUCCESS_SEND_LOCATION, bundle);
                         }
                     }) {
                 /**
