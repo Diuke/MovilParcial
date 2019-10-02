@@ -19,7 +19,7 @@
             app:title="@string/app_name"
 
             app:titleTextColor="@android:color/white"
-             />
+            />
 
     </com.google.android.material.appbar.AppBarLayout>
 

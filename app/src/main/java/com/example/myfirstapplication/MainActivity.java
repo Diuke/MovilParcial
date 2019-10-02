@@ -117,18 +117,7 @@ public class MainActivity extends AppCompatActivity
                 this,
                 "Welcome "+user,Toast.LENGTH_SHORT).
                 show();
-        ((Button)findViewById(R.id.start_service_button)).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent=new Intent(
-                        getApplicationContext(),SocketManagementService.class);
-                intent.putExtra("SERVER_HOST",((EditText)findViewById(R.id.server_ip_txt)).getText()+"");
-                intent.putExtra("SERVER_PORT",Integer.parseInt(((EditText)findViewById(R.id.server_port_txt)).getText()+""));
-                intent.setAction(SocketManagementService.ACTION_CONNECT);
-                startService(intent);
-                serviceStarted=true;
-            }
-        });
+
         initializeDataBase();
         AsyncTask.execute(new Runnable() {
             @Override
