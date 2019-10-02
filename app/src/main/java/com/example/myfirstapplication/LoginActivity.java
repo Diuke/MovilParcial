@@ -19,11 +19,14 @@ import android.widget.Toast;
 import androidx.room.Room;
 
 import com.example.myfirstapplication.database.AppDatabase;
+import com.example.myfirstapplication.model.Position;
 import com.example.myfirstapplication.model.Routes;
 import com.example.myfirstapplication.model.Session;
 import com.example.myfirstapplication.model.User;
 import com.example.myfirstapplication.webservice.LoginService;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 public class LoginActivity extends Activity {
@@ -112,6 +115,16 @@ public class LoginActivity extends Activity {
                     databaseBuilder(this,AppDatabase.class,
                             "app-database").
                     fallbackToDestructiveMigration().build();
+            /*AsyncTask.execute(new Runnable() {
+                @Override
+                public void run() {
+                    appDatabase.UserDao().deleteAll();
+                    List<User> listUser = appDatabase.UserDao().getAll();
+                    appDatabase.PositionDao().deleteAll();
+                    List<Position> listPosition = appDatabase.PositionDao().getAll();
+                }
+            });*/ //Para dropear la base de datos, NO DESCOMENTAR
+
         }catch (Exception error){
             Toast.makeText(this,error.getMessage(),Toast.LENGTH_LONG).show();
         }
@@ -138,6 +151,8 @@ public class LoginActivity extends Activity {
         ResponseResultReceiver response = new ResponseResultReceiver(new Handler());
         Intent serviceIntent = new Intent(getApplicationContext(), LoginService.class);
         serviceIntent.putExtra("action", "LOGIN");
+        serviceIntent.putExtra("username", username);
+        serviceIntent.putExtra("password", password);
         serviceIntent.putExtra("receiver", response);
         startService(serviceIntent);
     }
@@ -148,11 +163,35 @@ public class LoginActivity extends Activity {
         }
 
         @Override
-        protected void onReceiveResult(int resultCode, Bundle resultData) {
+        protected void onReceiveResult(int resultCode, final Bundle resultData) {
             try {
                 switch (resultCode){
                     case LoginService.LOGIN: {
                         if(resultData.getString("response").equals("SUCCESS")){
+                            AsyncTask.execute(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+                                        String username = resultData.getString("username");
+                                        String password = resultData.getString("password");
+                                        final User user = new User();
+                                        user.username = username;
+                                        user.first_name = "Default";
+                                        user.last_name = "Default";
+                                        user.full_name = "Default";
+                                        user.email = username + "@uninorte.edu.co";
+                                        user.lastLat = "0";
+                                        user.lastLon = "0";
+                                        user.status = "ONLINE";
+                                        user.lastSeen = formatter.format(new Date());
+                                        user.pwd = password;
+                                        appDatabase.UserDao().insertAll(user);
+                                    } catch (Exception error){
+                                        System.out.println("Error al agregar en ROOM");
+                                    }
+                                }
+                            });
                             String username = resultData.getString("username");
                             Session session = new Session(getApplicationContext());
                             session.setUsername(username);

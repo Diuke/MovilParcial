@@ -20,6 +20,7 @@ import androidx.room.Room;
 import com.example.myfirstapplication.database.AppDatabase;
 import com.example.myfirstapplication.model.Position;
 import com.example.myfirstapplication.model.Session;
+import com.example.myfirstapplication.model.User;
 import com.example.myfirstapplication.webservice.MapService;
 
 import java.util.Date;
@@ -121,9 +122,10 @@ public class GPSManager implements LocationListener {
                 @Override
                 public void run() {
                     try {
+                        List<User> activeUsers = appDatabase.UserDao().getAll();
+                        List<Position> list = appDatabase.PositionDao().getPositionsByUsername(username);
                         appDatabase.PositionDao().insertAll(position);
 
-                        List<Position> list = appDatabase.PositionDao().getAll();
                          System.out.println(list);
                     } catch (Exception error){
                         error.printStackTrace();

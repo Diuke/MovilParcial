@@ -18,11 +18,14 @@ public interface PositionDao {
     List<Position> getPositionById(int positionId);
 
     @Query("select * from Position  WHERE username = :username")
-    List<Position> getPositionsByUsername(int username);
+    List<Position> getPositionsByUsername(String username);
 
     @Insert
     void insertAll(Position... position);
 
-    @Delete
-    void delete(Position position);
+    @Query("DELETE FROM Position")
+    void deleteAll();
+
+    @Query("DELETE FROM Position WHERE position_id = :position_id")
+    void deleteById(int position_id);
 }

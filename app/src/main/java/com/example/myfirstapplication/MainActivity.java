@@ -38,11 +38,14 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
 
 import android.view.Menu;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -73,8 +76,12 @@ public class MainActivity extends AppCompatActivity
     AppDatabase appDatabase;
     String sessionUsername;
 
+    ArrayAdapter<String> arrayAdapter;
     HashMap<String, UserView> users;
+    ArrayList<String> usernamesForListView;
     HashSet<String> usernames;
+
+    ListView lv;
 
 
     public void initializeDataBase(){
@@ -107,6 +114,7 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
+
         NavigationView navigationView = findViewById(R.id.nav_view);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -134,6 +142,17 @@ public class MainActivity extends AppCompatActivity
         sessionUsername = session.getUsername();
         usernames = new HashSet<>();
         users = new HashMap<>();
+        usernamesForListView = new ArrayList<>();
+        lv = findViewById(R.id.listView);
+        arrayAdapter = new ArrayAdapter<String>(getApplicationContext(),android.R.layout.simple_list_item_1, usernamesForListView);
+        lv.setAdapter(arrayAdapter);
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position,
+                                    long id) {
+                System.out.println("works");
+            }
+        });
         initializeDataBase();
         initializeOSM();
         initializeGPSManager();
@@ -144,6 +163,7 @@ public class MainActivity extends AppCompatActivity
 
 
     public void updateMarker(UserView user){
+        if(user.getUsername().equals(sessionUsername)) return;
         Marker marker = user.getMarker();
         marker.setPosition(new GeoPoint(user.getLat(), user.getLon()));
         if(user.isStatus()){
@@ -372,17 +392,28 @@ public class MainActivity extends AppCompatActivity
                         HashSet<String> tempUsernames = (HashSet)resultData.getSerializable("usernames");
                         HashMap<String, UserView> tempUsers = (HashMap)resultData.getSerializable("user_info");
                         for(String username : tempUsernames){
-                            UserView user = tempUsers.get(username);
+                            UserView user;
+                            UserView tempUser = tempUsers.get(username);
                             if(!usernames.contains(username)) {
+                                user = tempUsers.get(username);
                                 usernames.add(username);
                                 users.put(username, user);
                                 Marker marker = new Marker(map);
                                 marker.setTitle(username);
                                 map.getOverlays().add(marker);
                                 users.get(username).setMarker(marker);
+                                usernamesForListView.add(username);
+
+                            } else {
+                                user = users.get(username);
+                                user.setLat(tempUser.getLat());
+                                user.setLon(tempUser.getLon());
+                                user.setLastSeen(tempUser.getLastSeen());
+                                user.setStatus(tempUser.isStatus());
                             }
                             updateMarker(user);
                         }
+                        arrayAdapter.notifyDataSetChanged();
                         break;
                     }
                 }
