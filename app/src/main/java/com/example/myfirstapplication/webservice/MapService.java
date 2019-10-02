@@ -24,12 +24,10 @@ import com.example.myfirstapplication.model.UserView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -58,7 +56,7 @@ public class MapService extends IntentService {
         this.rq = Volley.newRequestQueue(getApplicationContext());
         switch (action){
             case "GET_USERS": {
-                System.out.println("");
+                getUsersLocations(receiver);
                 break;
             }
 
@@ -77,18 +75,7 @@ public class MapService extends IntentService {
         super("MapService");
     }
 
-    public void updateMarker(UserView user){
-        Marker marker = user.getMarker();
-        marker.setPosition(new GeoPoint(user.getLat(), user.getLon()));
-        if(user.isStatus()){
-            marker.setIcon(context.getResources().getDrawable(R.drawable.ic_menu_mylocation));
-        } else {
-            marker.setIcon(context.getResources().getDrawable(R.drawable.ic_menu_offline));
-        }
-
-    }
-
-    public void getUsersLocations(){
+    public void getUsersLocations(final ResultReceiver receiver){
         JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET,
                 routes.routes.get("LOCATION"), null,
                 new Response.Listener<JSONObject>() {
@@ -98,27 +85,26 @@ public class MapService extends IntentService {
                         try {
                             String jsonString = response.getString("data").replaceAll("\\n", "");
                             JSONArray list = new JSONArray(jsonString);
+                            Bundle bundle = new Bundle();
+                            usernames = new HashSet<>();
+                            users = new HashMap<>();
                             for(int i = 0; i < list.length(); i++){
 
                                 JSONObject user = list.getJSONObject(i);
                                 UserView currentUser;
                                 String username = user.getString("username");
-                                if(!usernames.contains(username)){
-                                    usernames.add(username);
-                                    users.put(username,
-                                            new UserView(username, user.getString("full_name"),
-                                                    user.getDouble("lat"), user.getDouble("lon"), user.getString("lastSeen"),
-                                                    user.getString("status")));
-                                    Marker marker = new Marker(map);
-                                    marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                                    marker.setIcon(context.getResources().getDrawable(R.drawable.ic_menu_mylocation));
-                                    marker.setTitle(username);
-                                    map.getOverlays().add(marker);
-                                    users.get(username).setMarker(marker);
-                                }
-                                currentUser = users.get(username);
-                                updateMarker(currentUser);
+                                usernames.add(username);
+                                users.put(username,
+                                        new UserView(username, user.getString("full_name"),
+                                                user.getDouble("lat"), user.getDouble("lon"), user.getString("lastSeen"),
+                                                user.getString("status")));
+
+                                //updateMarker(currentUser);
                             }
+                            bundle.putSerializable("usernames", usernames);
+                            bundle.putSerializable("user_info", users);
+                            receiver.send(SUCCESS_GET_USERS_LOCATIONS, bundle);
+
 
                         } catch (Exception error){
                             error.printStackTrace();

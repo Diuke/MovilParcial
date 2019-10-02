@@ -7,34 +7,38 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.ResultReceiver;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-import com.example.myfirstapplication.model.Routes;
+import androidx.room.Room;
 
-import org.json.JSONObject;
+import com.example.myfirstapplication.database.AppDatabase;
+import com.example.myfirstapplication.model.Routes;
+import com.example.myfirstapplication.model.Session;
+import com.example.myfirstapplication.model.User;
+import com.example.myfirstapplication.webservice.LoginService;
+
+import java.util.List;
 
 public class LoginActivity extends Activity {
 
     Routes routes;
-    RequestQueue requestQueue;
+    AppDatabase appDatabase;
+    Activity thisActivity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login_activity_layout);
-
+        thisActivity = this;
         routes = new Routes();
-
+        initializeDataBase();
         if(this.checkSelfPermission(Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED ||
                 this.checkSelfPermission(Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED) {
             this.requestPermissions(new String[]{Manifest.permission.INTERNET,
@@ -45,8 +49,8 @@ public class LoginActivity extends Activity {
         ((Button)findViewById(R.id.login_button)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String userName = ((EditText) findViewById(R.id.login_user_name)).getText() + "";
-                String password = ((EditText) findViewById(R.id.login_password)).getText() + "";
+                final String userName = ((EditText) findViewById(R.id.login_user_name)).getText() + "";
+                final String password = ((EditText) findViewById(R.id.login_password)).getText() + "";
 
                 ConnectivityManager cm = (ConnectivityManager) getApplicationContext().
                         getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -58,7 +62,36 @@ public class LoginActivity extends Activity {
                         loginRequest(userName, password);
                     }else {
                         //Login Usando Room Database
-                        Toast.makeText(getApplicationContext(), "Offline", Toast.LENGTH_SHORT).show();
+                        try {
+
+                        } catch (Exception error){
+
+                        }
+                        AsyncTask.execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    List<User> usersByUsername = appDatabase.UserDao().getUserByUsername(userName);
+                                    if(usersByUsername.size() > 0){
+                                        String pass = usersByUsername.get(0).pwd;
+                                        if(pass.equals(password)){
+                                            Intent intentToBeCalled = new Intent(getApplicationContext(), MainActivity.class);
+                                            startActivity(intentToBeCalled);
+                                            //Toast.makeText(thisActivity, "Login successful", Toast.LENGTH_LONG).show();
+                                        } else {
+                                            Toast.makeText(thisActivity, "Wrong Password", Toast.LENGTH_LONG).show();
+                                        }
+                                    } else {
+                                        Toast.makeText(thisActivity, "User doesn't exist", Toast.LENGTH_LONG).show();
+                                    }
+
+                                } catch (Exception error){
+                                    error.printStackTrace();
+                                }
+
+                            }
+                        });
+                        Toast.makeText(getApplicationContext(), "You're offline, attempting local login", Toast.LENGTH_SHORT).show();
                     }
                 }
             }
@@ -71,6 +104,17 @@ public class LoginActivity extends Activity {
                 startActivity(intentToBeCalled);
             }
         });
+    }
+
+    public void initializeDataBase(){
+        try{
+            appDatabase= Room.
+                    databaseBuilder(this,AppDatabase.class,
+                            "app-database").
+                    fallbackToDestructiveMigration().build();
+        }catch (Exception error){
+            Toast.makeText(this,error.getMessage(),Toast.LENGTH_LONG).show();
+        }
     }
 
     public boolean fieldVerify(String username, String password) {
@@ -91,40 +135,38 @@ public class LoginActivity extends Activity {
     }
 
     public void loginRequest(String username, String password) {
-        try {
-            requestQueue = Volley.newRequestQueue(this);
-            JSONObject body = new JSONObject();
-            body.put("data", password);
-            JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST,
-                    routes.routes.get("USER_BY_USERNAME") + username, body, new Response.Listener<JSONObject>() {
-                @Override
-                public void onResponse(JSONObject response) {
-                    try {
-                        System.out.println(response);
-                        if (("" + response.get("success")).equals("true")) {
-                            Toast.makeText(getApplicationContext(), R.string.successful_login,
-                                    Toast.LENGTH_LONG).show();
+        ResponseResultReceiver response = new ResponseResultReceiver(new Handler());
+        Intent serviceIntent = new Intent(getApplicationContext(), LoginService.class);
+        serviceIntent.putExtra("action", "LOGIN");
+        serviceIntent.putExtra("receiver", response);
+        startService(serviceIntent);
+    }
+
+    private class ResponseResultReceiver extends ResultReceiver {
+        public ResponseResultReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData) {
+            try {
+                switch (resultCode){
+                    case LoginService.LOGIN: {
+                        if(resultData.getString("response").equals("SUCCESS")){
+                            String username = resultData.getString("username");
+                            Session session = new Session(getApplicationContext());
+                            session.setUsername(username);
                             Intent intentToBeCalled = new Intent(getApplicationContext(), MainActivity.class);
                             startActivity(intentToBeCalled);
-                        } else {
-                            Toast.makeText(getApplicationContext(), R.string.login_password_error,
-                                    Toast.LENGTH_LONG).show();
                         }
-                    }catch (Exception ex) {
-                        Toast.makeText(getApplicationContext(), R.string.something_wrong, Toast.LENGTH_LONG).show();
-                        ex.printStackTrace();
+                        break;
                     }
                 }
-            }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    System.out.println(error.getMessage());
-                }
-            });
-            requestQueue.add(request);
-        }catch (Exception ex) {
-            Toast.makeText(getApplicationContext(), R.string.something_wrong, Toast.LENGTH_LONG).show();
-            ex.printStackTrace();
+                super.onReceiveResult(resultCode, resultData);
+            } catch (Exception error){
+                error.printStackTrace();
+            }
+
         }
     }
 

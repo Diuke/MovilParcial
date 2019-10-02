@@ -1,34 +1,31 @@
 package com.example.myfirstapplication;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
-import com.android.volley.RequestQueue;
 import com.example.myfirstapplication.broadcast.BroadcastManager;
 import com.example.myfirstapplication.broadcast.BroadcastManagerCallerInterface;
 import com.example.myfirstapplication.database.AppDatabase;
 import com.example.myfirstapplication.gps.GPSManager;
 import com.example.myfirstapplication.gps.GPSManagerCallerInterface;
-import com.example.myfirstapplication.model.Position;
-import com.example.myfirstapplication.model.User;
+import com.example.myfirstapplication.model.Session;
 import com.example.myfirstapplication.model.UserView;
 import com.example.myfirstapplication.network.SocketManagementService;
 import com.example.myfirstapplication.webservice.MapService;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
+import android.os.Handler;
+import android.os.ResultReceiver;
 import android.preference.PreferenceManager;
 import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.view.GravityCompat;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -46,8 +43,6 @@ import androidx.room.Room;
 import android.view.Menu;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -61,15 +56,13 @@ import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, GPSManagerCallerInterface , BroadcastManagerCallerInterface {
 
+    Activity thisActivity = this;
     GPSManager gpsManager;
     private MapView map;
     private MyLocationNewOverlay mLocationOverlay;
@@ -78,7 +71,7 @@ public class MainActivity extends AppCompatActivity
     ArrayAdapter<String> adapter ;
     boolean serviceStarted=false;
     AppDatabase appDatabase;
-    MapService mapService;
+    String sessionUsername;
 
     HashMap<String, UserView> users;
     HashSet<String> usernames;
@@ -126,62 +119,39 @@ public class MainActivity extends AppCompatActivity
         ((Button)findViewById(R.id.start_service_button)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent=new Intent(
+                updateUserLocations();
+                /*Intent intent=new Intent(
                         getApplicationContext(),SocketManagementService.class);
                 intent.putExtra("SERVER_HOST",((EditText)findViewById(R.id.server_ip_txt)).getText()+"");
                 intent.putExtra("SERVER_PORT",Integer.parseInt(((EditText)findViewById(R.id.server_port_txt)).getText()+""));
                 intent.setAction(SocketManagementService.ACTION_CONNECT);
                 startService(intent);
-                serviceStarted=true;
+                serviceStarted=true;*/
+
             }
         });
+        Session session = new Session(getApplicationContext());
+        sessionUsername = session.getUsername();
+        usernames = new HashSet<>();
+        users = new HashMap<>();
         initializeDataBase();
         initializeOSM();
-        AsyncTask.execute(new Runnable() {
-            @Override
-            public void run() {
-            int[] userId = new int[1];
-            userId[0] = 1;
-            List<User> list = appDatabase.UserDao().getUserByUsername("demarchenac");
-            if(list.size() < 1){
-                        createUser("demarchenac", "pjduque@uninorte.edu.co", "123456", "Juan ", "Duque");
-                        List<User> all = appDatabase.UserDao().getAll();
-                        System.out.println(list);
-                        initializeGPSManager();
-            } else {
-                initializeGPSManager();
-            }
-            }
-        });
-        initializeMapRealTime();
+        initializeGPSManager();
+        updateUserLocations();
         initializeBroadcastManagerForSocketIO();
         adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, listOfMessages);
     }
 
-    public void createUser(String username, String userEmail, String userPassword, String firstName, String lastName){
-        final User user=new User();
-        user.username = username;
-        user.email = userEmail;
-        user.pwd = userPassword;
-        user.first_name = firstName;
-        user.last_name = lastName;
-        user.full_name = firstName + " " + lastName;
-        user.lastSeen = new Date().toString();
-        user.status = "offline";
-        user.lastLat = "";
-        user.lastLon = "";
 
-        try {
-            AsyncTask.execute(new Runnable() {
-                @Override
-                public void run() {
-                    appDatabase.UserDao().insertAll(user);
-                }
-            });
-
-        }catch (Exception error){
-            Toast.makeText(this,error.getMessage(),Toast.LENGTH_LONG).show();
+    public void updateMarker(UserView user){
+        Marker marker = user.getMarker();
+        marker.setPosition(new GeoPoint(user.getLat(), user.getLon()));
+        if(user.isStatus()){
+            marker.setIcon(getApplicationContext().getResources().getDrawable(R.drawable.ic_user_green));
+        } else {
+            marker.setIcon(getApplicationContext().getResources().getDrawable(R.drawable.ic_user_red));
         }
+
     }
 
     @Override
@@ -318,11 +288,14 @@ public class MainActivity extends AppCompatActivity
                             getDefaultSharedPreferences(ctx));
             map = (MapView) findViewById(R.id.map);
             map.setTileSource(TileSourceFactory.MAPNIK);
+            map.setTilesScaledToDpi(true);
             this.mLocationOverlay =
                     new MyLocationNewOverlay(
                             new GpsMyLocationProvider(
                                     this),map);
             this.mLocationOverlay.enableMyLocation();
+            this.map.setMultiTouchControls(true);
+
             map.getOverlays().add(this.mLocationOverlay);
             map.getController().setZoom(15.0);
         }catch (Exception error){
@@ -331,26 +304,19 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void initializeMapRealTime(){
+    public void updateUserLocations(){
 
         try {
-            AsyncTask.execute(new Runnable() {
-                @Override
-                public void run() {
-                    /*while(true){
-                        mapService.getUsersLocations();
-                        try {
-                            Thread.sleep(5000);
-                        } catch (Exception error){
-                            error.printStackTrace();
-                        }
-                    }*/
+            ResponseResultReceiver response = new ResponseResultReceiver(new Handler());
+            Intent serviceIntent = new Intent(getApplicationContext(), MapService.class);
+            serviceIntent.putExtra("action", "GET_USERS");
+            serviceIntent.putExtra("receiver", response);
+            thisActivity.startService(serviceIntent);
 
-                }
-            });
-        } catch (Exception error){
-            error.printStackTrace();
+        }catch (Exception error){
+            Toast.makeText(thisActivity, error.getMessage(),Toast.LENGTH_LONG).show();
         }
+
     }
 
     public void setMapCenter(Location location){
@@ -368,7 +334,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void run() {
                 listOfMessages.add(message);
-                ((ListView)findViewById(R.id.messages_list_view)).setAdapter(adapter);
+
                 adapter.notifyDataSetChanged();
             }
         });
@@ -385,7 +351,46 @@ public class MainActivity extends AppCompatActivity
         if(broadcastManagerForSocketIO!=null){
             broadcastManagerForSocketIO.unRegister();
         }
-        mapService.cancelAllRequests("");
         super.onDestroy();
+    }
+
+    private class ResponseResultReceiver extends ResultReceiver {
+        public ResponseResultReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData) {
+            try {
+                switch (resultCode){
+                    case MapService.ERROR:{
+                        Toast.makeText(thisActivity, resultData.getString("response"), Toast.LENGTH_LONG).show();
+                        break;
+                    }
+
+                    case MapService.SUCCESS_GET_USERS_LOCATIONS: {
+                        HashSet<String> tempUsernames = (HashSet)resultData.getSerializable("usernames");
+                        HashMap<String, UserView> tempUsers = (HashMap)resultData.getSerializable("user_info");
+                        for(String username : tempUsernames){
+                            UserView user = tempUsers.get(username);
+                            if(!usernames.contains(username)) {
+                                usernames.add(username);
+                                users.put(username, user);
+                                Marker marker = new Marker(map);
+                                marker.setTitle(username);
+                                map.getOverlays().add(marker);
+                                users.get(username).setMarker(marker);
+                            }
+                            updateMarker(user);
+                        }
+                        break;
+                    }
+                }
+                super.onReceiveResult(resultCode, resultData);
+            } catch (Exception error){
+                error.printStackTrace();
+            }
+
+        }
     }
 }

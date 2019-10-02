@@ -42,16 +42,15 @@
             ></View>
 
 
-
-    <org.osmdroid.views.MapView
-        android:id="@+id/map"
-        android:layout_width="match_parent"
-        android:layout_height="400dp"
-        android:layout_marginLeft="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginRight="10dp"
-        android:layout_marginBottom="10dp"
-        />
+        <org.osmdroid.views.MapView
+            android:id="@+id/map"
+            android:layout_width="wrap_content"
+            android:layout_height="400dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            android:isScrollContainer="false" />
 
         <TextView
             android:layout_width="match_parent"
@@ -245,19 +244,6 @@
 
         />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Messages from server"
-            android:fontFamily="@font/futurafontfamily"
-            android:textSize="16sp"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginRight="10dp"
-            android:textStyle="bold"
-
-            />
-
         <View
             android:layout_width="match_parent"
             android:layout_height="0.5dp"
@@ -268,17 +254,6 @@
             android:layout_marginBottom="10dp"
             ></View>
 
-        <ListView
-            android:layout_width="match_parent"
-            android:layout_height="250dp"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_marginBottom="10dp"
-            android:id="@+id/messages_list_view"
-            android:nestedScrollingEnabled="true"
-
-            ></ListView>
     </LinearLayout>
 
 
