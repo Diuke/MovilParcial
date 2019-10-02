@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -9,145 +9,92 @@
     tools:context=".MainActivity"
     tools:showIn="@layout/app_bar_main"
     android:nestedScrollingEnabled="true"
+
     >
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        >
 
         <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Real-time location"
-                android:fontFamily="@font/futurafontfamily"
-                android:textSize="16sp"
-                android:layout_marginLeft="10dp"
-                android:layout_marginTop="20dp"
-                android:layout_marginRight="10dp"
-                android:textStyle="bold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginRight="10dp"
+            android:fontFamily="@font/futurafontfamily"
+            android:text="STATUS: ONLINE"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:id="@+id/status"
 
-                />
+            />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Real-time location"
+            android:fontFamily="@font/futurafontfamily"
+            android:textSize="16sp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginRight="10dp"
+            android:textStyle="bold"
+
+            />
 
         <View
-                android:layout_width="match_parent"
-                android:layout_height="0.5dp"
-                android:background="@color/uninorteRed"
-                android:layout_marginLeft="10dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginRight="10dp"
-                android:layout_marginBottom="10dp"
-                ></View>
-
-        <org.osmdroid.views.MapView
-            android:id="@+id/map"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_height="0.5dp"
+            android:background="@color/uninorteRed"
             android:layout_marginLeft="10dp"
             android:layout_marginTop="10dp"
             android:layout_marginRight="10dp"
             android:layout_marginBottom="10dp"
-            />
+            ></View>
+
+
+        <org.osmdroid.views.MapView
+            android:id="@+id/map"
+            android:layout_width="wrap_content"
+            android:layout_height="400dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            android:isScrollContainer="false" />
 
         <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Last location data"
-                android:fontFamily="@font/futurafontfamily"
-                android:textSize="16sp"
-                android:layout_marginLeft="10dp"
-                android:layout_marginTop="5dp"
-                android:layout_marginRight="10dp"
-                android:textStyle="bold"
-                android:id="@+id/longitude_text_view"
-                android:text="no data yet"
-                android:layout_weight="0.5"
-                android:textAlignment="textEnd"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Last location data"
+            android:fontFamily="@font/futurafontfamily"
+            android:textSize="16sp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginRight="10dp"
+            android:textStyle="bold"
 
-                />
-                
-                />
-        </LinearLayout>
+            />
 
         <View
-                android:layout_width="match_parent"
-                android:layout_height="0.5dp"
-                android:background="@color/uninorteRed"
-                android:layout_marginLeft="10dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginRight="10dp"
-                android:layout_marginBottom="5dp"
-                ></View>
-
-        <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginLeft="10dp"
-                android:layout_marginTop="5dp"
-                android:layout_marginRight="10dp"
-                android:layout_marginBottom="10dp"
-                >
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/futurafontfamily"
-                    android:textSize="16sp"
-                    android:text="Latitude"
-                    android:layout_weight="0.5"
-
-
-                    />
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/futurafontfamily"
-                    android:textSize="16sp"
-                    android:id="@+id/latitude_text_view"
-                    android:text="no data yet"
-                    android:layout_weight="0.5"
-                    android:textAlignment="textEnd"
-                    />
-            </LinearLayout>
-
-        <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginLeft="10dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginRight="10dp"
-                android:layout_marginBottom="10dp"
-                >
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/futurafontfamily"
-                    android:textSize="16sp"
-                    android:text="Longitude"
-                    android:layout_weight="0.5"
-
-
-                    />
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/futurafontfamily"
-                    android:textSize="16sp"
-                    android:id="@+id/longitude_text_view"
-                    android:text="no data yet"
-                    android:layout_weight="0.5"
-                    android:textAlignment="textEnd"
-                    />
-            </LinearLayout>
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/uninorteRed"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            ></View>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginLeft="10dp"
-            android:layout_marginTop="5dp"
+            android:layout_marginTop="10dp"
             android:layout_marginRight="10dp"
             android:layout_marginBottom="10dp"
             >
@@ -155,20 +102,81 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/futurafontfamily"
-                android:textSize="30sp"
-                android:text=""
+                android:textSize="16sp"
+                android:text="Latitude"
                 android:layout_weight="0.5"
 
 
                 />
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/chat_button"
-                android:clickable="true"
-                app:srcCompat="@android:drawable/sym_action_chat"
+                android:fontFamily="@font/futurafontfamily"
+                android:textSize="16sp"
+                android:id="@+id/latitude_text_view"
+                android:text="no data yet"
+                android:layout_weight="0.5"
+                android:textAlignment="textEnd"
                 />
         </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            >
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/futurafontfamily"
+                android:textSize="16sp"
+                android:text="Longitude"
+                android:layout_weight="0.5"
+
+
+                />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/futurafontfamily"
+                android:textSize="16sp"
+                android:id="@+id/longitude_text_view"
+                android:text="no data yet"
+                android:layout_weight="0.5"
+                android:textAlignment="textEnd"
+                />
+        </LinearLayout>
+
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/uninorteRed"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            ></View>
+
+        <Button
+            android:id="@+id/chat_button"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_margin="20dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:background="@color/uninorteRed"
+            android:fontFamily="@font/futurafontfamily"
+            android:text="CHAT"
+
+            android:textColor="@android:color/white"
+
+
+            />
 
         <Button
             android:id="@+id/start_service_button"
@@ -198,9 +206,9 @@
                 android:layout_weight="1" />
         </LinearLayout>
 
+
     </LinearLayout>
 
 
 
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</ScrollView>

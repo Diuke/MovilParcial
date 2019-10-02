@@ -3,6 +3,8 @@ package com.example.myfirstapplication.webservice;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.ResultReceiver;
@@ -50,8 +52,20 @@ public class MapService extends IntentService {
 
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
+        ConnectivityManager cm = (ConnectivityManager) getApplicationContext().
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+
+
         routes = new Routes();
         final ResultReceiver receiver = intent.getParcelableExtra("receiver");
+        Bundle bundle = new Bundle();
+        if(!isConnected){
+            bundle.putBoolean("connection", false);
+            receiver.send(ERROR, bundle);
+            return;
+        }
         String action = intent.getStringExtra("action");
         this.rq = Volley.newRequestQueue(getApplicationContext());
         switch (action){
@@ -138,6 +152,7 @@ public class MapService extends IntentService {
                             System.out.println(response);
                             Bundle bundle = new Bundle();
                             bundle.putString("response", "SUCCESS");
+                            bundle.putBoolean("connection", false);
                             receiver.send(SUCCESS_SEND_LOCATION, bundle);
                         }
                     },
@@ -147,6 +162,7 @@ public class MapService extends IntentService {
                             System.out.println(error.getMessage());
                             Bundle bundle = new Bundle();
                             bundle.putString("response", error.getMessage());
+                            bundle.putBoolean("connection", false);
                             receiver.send(ERROR, bundle);
                         }
                     }) {

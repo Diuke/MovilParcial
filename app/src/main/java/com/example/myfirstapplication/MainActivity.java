@@ -40,7 +40,6 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
 
 import android.view.Menu;
@@ -72,8 +71,6 @@ public class MainActivity extends AppCompatActivity
     private MapView map;
     private MyLocationNewOverlay mLocationOverlay;
     BroadcastManager broadcastManagerForSocketIO;
-//    ArrayList<String> listOfMessages=new ArrayList<>();
-//    ArrayAdapter<String> adapter ;
     boolean serviceStarted=false;
     AppDatabase appDatabase;
     String sessionUsername;
@@ -131,6 +128,8 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 updateUserLocations();
+            }
+        });
 
         Session session = new Session(getApplicationContext());
         sessionUsername = session.getUsername();
@@ -161,7 +160,7 @@ public class MainActivity extends AppCompatActivity
         initializeBroadcastManagerForSocketIO();
 //        adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, listOfMessages);
 
-        ((FloatingActionButton)findViewById(R.id.chat_button)).setOnClickListener(new View.OnClickListener() {
+        (findViewById(R.id.chat_button)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intentChat = new Intent(getApplicationContext(), chat.class);
@@ -253,7 +252,8 @@ public class MainActivity extends AppCompatActivity
     public void needPermissions() {
         this.requestPermissions(new String[]{
                         Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION},
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                },
                 1001);
     }
 
@@ -400,6 +400,10 @@ public class MainActivity extends AppCompatActivity
             try {
                 switch (resultCode){
                     case MapService.ERROR:{
+                        if(!resultData.getBoolean("connection")){
+                            TextView tv = findViewById(R.id.status);
+                            tv.setText("STATUS: OFFLINE");
+                        }
                         Toast.makeText(thisActivity, resultData.getString("response"), Toast.LENGTH_LONG).show();
                         break;
                     }
@@ -407,6 +411,8 @@ public class MainActivity extends AppCompatActivity
                     case MapService.SUCCESS_GET_USERS_LOCATIONS: {
                         HashSet<String> tempUsernames = (HashSet)resultData.getSerializable("usernames");
                         HashMap<String, UserView> tempUsers = (HashMap)resultData.getSerializable("user_info");
+                        TextView tv = findViewById(R.id.status);
+                        tv.setText("STATUS: ONLINE");
                         for(String username : tempUsernames){
                             UserView user;
                             UserView tempUser = tempUsers.get(username);
@@ -441,3 +447,4 @@ public class MainActivity extends AppCompatActivity
         }
     }
 }
+

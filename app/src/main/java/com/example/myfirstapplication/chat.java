@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import com.example.myfirstapplication.broadcast.BroadcastManager;
 import com.example.myfirstapplication.broadcast.BroadcastManagerCallerInterface;
+import com.example.myfirstapplication.model.Session;
 import com.example.myfirstapplication.network.SocketManagementService;
 
 import java.util.ArrayList;
@@ -24,10 +25,15 @@ public class chat extends AppCompatActivity implements BroadcastManagerCallerInt
     private ArrayAdapter<String> adapter;
     private BroadcastManager broadcastManagerForSocketIO;
 
+    Session session;
+    String username;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+        session = new Session(getApplicationContext());
+        username = session.getUsername();
 
 //        try {
 //            Intent intent = new Intent(
@@ -43,7 +49,7 @@ public class chat extends AppCompatActivity implements BroadcastManagerCallerInt
 //        }
         initializeBroadcastManagerForSocketIO();
         adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, listOfMessages);
-
+        ((ListView)findViewById(R.id.messages_list_view)).setAdapter(adapter);
         ((Button)findViewById(R.id.buttonSend)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -55,7 +61,9 @@ public class chat extends AppCompatActivity implements BroadcastManagerCallerInt
     private void sendMessage(String msg){
         if (serviceStarted){
             if (broadcastManagerForSocketIO != null){
-                broadcastManagerForSocketIO.sendBroadcast(SocketManagementService.CLIENT_TO_SERVER_MESSAGE,"C"+msg);
+                listOfMessages.add(username + ": " + msg);
+                adapter.notifyDataSetChanged();
+                broadcastManagerForSocketIO.sendBroadcast(SocketManagementService.CLIENT_TO_SERVER_MESSAGE, username + ": " + msg);
             }
         }
     }
@@ -71,9 +79,12 @@ public class chat extends AppCompatActivity implements BroadcastManagerCallerInt
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                listOfMessages.add(message);
-                ((ListView)findViewById(R.id.messages_list_view)).setAdapter(adapter);
-                adapter.notifyDataSetChanged();
+                System.out.println(message);
+                if(!message.contains("update@locations") && !message.contains(username + ": ")){
+                    listOfMessages.add(message);
+                    adapter.notifyDataSetChanged();
+                }
+
             }
         });
     }

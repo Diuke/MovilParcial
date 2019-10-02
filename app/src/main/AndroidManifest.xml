@@ -20,6 +20,8 @@
 
         <activity android:name=".RegisterActivity" />
 
+        <activity android:name=".chat" />
+
         <service
             android:name=".network.SocketManagementService"
             android:exported="true" />
