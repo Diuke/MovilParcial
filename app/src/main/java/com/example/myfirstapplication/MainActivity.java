@@ -14,6 +14,7 @@ import com.example.myfirstapplication.broadcast.BroadcastManagerCallerInterface;
 import com.example.myfirstapplication.database.AppDatabase;
 import com.example.myfirstapplication.gps.GPSManager;
 import com.example.myfirstapplication.gps.GPSManagerCallerInterface;
+import com.example.myfirstapplication.model.Routes;
 import com.example.myfirstapplication.model.Session;
 import com.example.myfirstapplication.model.UserView;
 import com.example.myfirstapplication.network.SocketManagementService;
@@ -128,13 +129,6 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 updateUserLocations();
-                /*Intent intent=new Intent(
-                        getApplicationContext(),SocketManagementService.class);
-                intent.putExtra("SERVER_HOST",((EditText)findViewById(R.id.server_ip_txt)).getText()+"");
-                intent.putExtra("SERVER_PORT",Integer.parseInt(((EditText)findViewById(R.id.server_port_txt)).getText()+""));
-                intent.setAction(SocketManagementService.ACTION_CONNECT);
-                startService(intent);
-                serviceStarted=true;*/
 
             }
         });
@@ -157,6 +151,13 @@ public class MainActivity extends AppCompatActivity
         initializeOSM();
         initializeGPSManager();
         updateUserLocations();
+        Routes routes = new Routes();
+        Intent intent=new Intent(getApplicationContext(),SocketManagementService.class);
+        intent.putExtra("SERVER_HOST", routes.ip);
+        intent.putExtra("SERVER_PORT",9090);
+        intent.setAction(SocketManagementService.ACTION_CONNECT);
+        startService(intent);
+        serviceStarted=true;
         initializeBroadcastManagerForSocketIO();
         adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, listOfMessages);
     }
@@ -260,12 +261,12 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        if(serviceStarted)
+        /*if(serviceStarted)
             if(broadcastManagerForSocketIO!=null){
                 broadcastManagerForSocketIO.sendBroadcast(
                         SocketManagementService.CLIENT_TO_SERVER_MESSAGE,
                         location.getLatitude()+" / "+location.getLongitude());
-            }
+            }*/
     }
 
     @Override
@@ -350,14 +351,28 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void MessageReceivedThroughBroadcastManager(final String channel,final String type, final String message) {
-        runOnUiThread(new Runnable() {
+        /*runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 listOfMessages.add(message);
 
                 adapter.notifyDataSetChanged();
             }
-        });
+        });*/
+        try {
+            if (type.equals(SocketManagementService.SERVER_TO_CLIENT_MESSAGE)) {
+                String[] data = message.split(" ");
+                if (data[1].equals("update@locations")) {
+                    System.out.println("Request Actualize");
+                    updateUserLocations();
+                }else {
+                    System.out.println("Server Msg: " + message);
+                }
+            }
+        }catch (Exception ex) {
+            Toast.makeText(getApplicationContext(), R.string.something_wrong, Toast.LENGTH_LONG).show();
+            ex.printStackTrace();
+        }
 
     }
 
