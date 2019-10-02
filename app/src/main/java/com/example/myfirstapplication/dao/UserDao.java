@@ -20,7 +20,10 @@ public interface UserDao {
     @Insert
     void insertAll(User... users);
 
-    @Delete
-    void delete(User user);
+    @Query("DELETE FROM User WHERE username = :username")
+    void deleteByUsername(String username);
+
+    @Query("DELETE FROM User")
+    void deleteAll();
 
 }

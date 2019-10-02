@@ -3,9 +3,11 @@ package com.example.myfirstapplication.webservice;
 import android.app.IntentService;
 import android.content.Intent;
 import android.content.Context;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ResultReceiver;
+import android.text.format.Formatter;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -62,6 +64,9 @@ public class LoginService extends IntentService {
     }
 
     public void register(final String username, final String password, final String confirmPassword, final ResultReceiver receiver){
+        final String globalUsername = username;
+        final String globalPassword = password;
+        final String globalConfirm = confirmPassword;
         try {
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
             JSONObject body = new JSONObject();
@@ -88,9 +93,9 @@ public class LoginService extends IntentService {
                             Toast.makeText(getApplicationContext(), R.string.successful_user_creation,
                                     Toast.LENGTH_LONG).show();
                             Bundle bundle = new Bundle();
-                            bundle.putString("username", username);
-                            bundle.putString("password", password);
-                            bundle.putString("confirmPassword", confirmPassword);
+                            bundle.putString("username", globalUsername);
+                            bundle.putString("password", globalPassword);
+                            bundle.putString("confirmPassword", globalConfirm);
                             bundle.putString("response", "SUCCESS");
                             receiver.send(REGISTER, bundle);
 
@@ -116,10 +121,13 @@ public class LoginService extends IntentService {
 
     }
 
-    public void login(final String username, String password, final ResultReceiver receiver){
+    public void login(final String username, final String password, final ResultReceiver receiver){
         try {
+            WifiManager wm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+            String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
             JSONObject body = new JSONObject();
-            body.put("data", password);
+            body.put("first_value", password);
+            body.put("last_value", ip);
             JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST,
                     routes.routes.get("USER_BY_USERNAME") + username, body, new Response.Listener<JSONObject>() {
                 @Override
@@ -130,8 +138,9 @@ public class LoginService extends IntentService {
                         if (("" + response.get("success")).equals("true")) {
                             Toast.makeText(getApplicationContext(), R.string.successful_login,
                                     Toast.LENGTH_LONG).show();
-                            bundle.putString("response", "SUCCESS");
                             bundle.putString("username", username);
+                            bundle.putString("password", password);
+                            bundle.putString("response", "SUCCESS");
                             receiver.send(LOGIN, bundle);
 
                         } else {

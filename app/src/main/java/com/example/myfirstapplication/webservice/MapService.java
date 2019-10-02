@@ -147,7 +147,7 @@ public class MapService extends IntentService {
                             System.out.println(error.getMessage());
                             Bundle bundle = new Bundle();
                             bundle.putString("response", error.getMessage());
-                            receiver.send(SUCCESS_SEND_LOCATION, bundle);
+                            receiver.send(ERROR, bundle);
                         }
                     }) {
                 /**

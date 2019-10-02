@@ -14,6 +14,7 @@ import com.example.myfirstapplication.broadcast.BroadcastManagerCallerInterface;
 import com.example.myfirstapplication.database.AppDatabase;
 import com.example.myfirstapplication.gps.GPSManager;
 import com.example.myfirstapplication.gps.GPSManagerCallerInterface;
+import com.example.myfirstapplication.model.Routes;
 import com.example.myfirstapplication.model.Session;
 import com.example.myfirstapplication.model.UserView;
 import com.example.myfirstapplication.network.SocketManagementService;
@@ -39,11 +40,14 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
 
 import android.view.Menu;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -74,8 +78,12 @@ public class MainActivity extends AppCompatActivity
     AppDatabase appDatabase;
     String sessionUsername;
 
+    ArrayAdapter<String> arrayAdapter;
     HashMap<String, UserView> users;
+    ArrayList<String> usernamesForListView;
     HashSet<String> usernames;
+
+    ListView lv;
 
 
     public void initializeDataBase(){
@@ -108,6 +116,7 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
+
         NavigationView navigationView = findViewById(R.id.nav_view);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -118,14 +127,37 @@ public class MainActivity extends AppCompatActivity
         //String user=getIntent().getExtras().getString("user_name");
         //Toast.makeText(this,"Welcome "+user,Toast.LENGTH_SHORT).show();
 
+        ((Button)findViewById(R.id.start_service_button)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                updateUserLocations();
+
         Session session = new Session(getApplicationContext());
         sessionUsername = session.getUsername();
         usernames = new HashSet<>();
         users = new HashMap<>();
+        usernamesForListView = new ArrayList<>();
+        lv = findViewById(R.id.listView);
+        arrayAdapter = new ArrayAdapter<String>(getApplicationContext(),android.R.layout.simple_list_item_1, usernamesForListView);
+        lv.setAdapter(arrayAdapter);
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position,
+                                    long id) {
+                System.out.println("works");
+            }
+        });
         initializeDataBase();
         initializeOSM();
         initializeGPSManager();
         updateUserLocations();
+        Routes routes = new Routes();
+        Intent intent=new Intent(getApplicationContext(),SocketManagementService.class);
+        intent.putExtra("SERVER_HOST", routes.ip);
+        intent.putExtra("SERVER_PORT",9090);
+        intent.setAction(SocketManagementService.ACTION_CONNECT);
+        startService(intent);
+        serviceStarted=true;
         initializeBroadcastManagerForSocketIO();
 //        adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, listOfMessages);
 
@@ -140,6 +172,7 @@ public class MainActivity extends AppCompatActivity
 
 
     public void updateMarker(UserView user){
+        if(user.getUsername().equals(sessionUsername)) return;
         Marker marker = user.getMarker();
         marker.setPosition(new GeoPoint(user.getLat(), user.getLon()));
         if(user.isStatus()){
@@ -236,12 +269,12 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        if(serviceStarted)
+        /*if(serviceStarted)
             if(broadcastManagerForSocketIO!=null){
                 broadcastManagerForSocketIO.sendBroadcast(
                         SocketManagementService.CLIENT_TO_SERVER_MESSAGE,
                         location.getLatitude()+" / "+location.getLongitude());
-            }
+            }*/
     }
 
     @Override
@@ -326,14 +359,21 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void MessageReceivedThroughBroadcastManager(final String channel,final String type, final String message) {
-//        runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                listOfMessages.add(message);
-//
-//                adapter.notifyDataSetChanged();
-//            }
-//        });
+
+        try {
+            if (type.equals(SocketManagementService.SERVER_TO_CLIENT_MESSAGE)) {
+                String[] data = message.split(" ");
+                if (data[1].equals("update@locations")) {
+                    System.out.println("Request Actualize");
+                    updateUserLocations();
+                }else {
+                    System.out.println("Server Msg: " + message);
+                }
+            }
+        }catch (Exception ex) {
+            Toast.makeText(getApplicationContext(), R.string.something_wrong, Toast.LENGTH_LONG).show();
+            ex.printStackTrace();
+        }
 
     }
 
@@ -368,17 +408,28 @@ public class MainActivity extends AppCompatActivity
                         HashSet<String> tempUsernames = (HashSet)resultData.getSerializable("usernames");
                         HashMap<String, UserView> tempUsers = (HashMap)resultData.getSerializable("user_info");
                         for(String username : tempUsernames){
-                            UserView user = tempUsers.get(username);
+                            UserView user;
+                            UserView tempUser = tempUsers.get(username);
                             if(!usernames.contains(username)) {
+                                user = tempUsers.get(username);
                                 usernames.add(username);
                                 users.put(username, user);
                                 Marker marker = new Marker(map);
                                 marker.setTitle(username);
                                 map.getOverlays().add(marker);
                                 users.get(username).setMarker(marker);
+                                usernamesForListView.add(username);
+
+                            } else {
+                                user = users.get(username);
+                                user.setLat(tempUser.getLat());
+                                user.setLon(tempUser.getLon());
+                                user.setLastSeen(tempUser.getLastSeen());
+                                user.setStatus(tempUser.isStatus());
                             }
                             updateMarker(user);
                         }
+                        arrayAdapter.notifyDataSetChanged();
                         break;
                     }
                 }

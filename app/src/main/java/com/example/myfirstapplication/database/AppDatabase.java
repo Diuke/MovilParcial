@@ -12,7 +12,7 @@ import com.example.myfirstapplication.model.Message;
 import com.example.myfirstapplication.model.Position;
 import com.example.myfirstapplication.model.User;
 
-@Database(entities = {User.class, Position.class, Message.class}, version = 4)
+@Database(entities = {User.class, Position.class, Message.class}, version = 5)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     public abstract UserDao UserDao();
