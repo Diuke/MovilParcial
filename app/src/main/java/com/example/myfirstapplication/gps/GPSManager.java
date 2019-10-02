@@ -1,6 +1,7 @@
 package com.example.myfirstapplication.gps;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -84,6 +85,7 @@ public class GPSManager implements LocationListener {
         }
     }
 
+    @SuppressLint("MissingPermission")
     public void startGPSRequesting(){
         try {
             locationManager.requestLocationUpdates(

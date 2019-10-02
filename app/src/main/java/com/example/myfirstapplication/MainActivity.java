@@ -33,6 +33,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle;
 
 import android.view.MenuItem;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -71,8 +72,8 @@ public class MainActivity extends AppCompatActivity
     private MapView map;
     private MyLocationNewOverlay mLocationOverlay;
     BroadcastManager broadcastManagerForSocketIO;
-    ArrayList<String> listOfMessages=new ArrayList<>();
-    ArrayAdapter<String> adapter ;
+//    ArrayList<String> listOfMessages=new ArrayList<>();
+//    ArrayAdapter<String> adapter ;
     boolean serviceStarted=false;
     AppDatabase appDatabase;
     String sessionUsername;
@@ -125,13 +126,12 @@ public class MainActivity extends AppCompatActivity
 
         //String user=getIntent().getExtras().getString("user_name");
         //Toast.makeText(this,"Welcome "+user,Toast.LENGTH_SHORT).show();
+
         ((Button)findViewById(R.id.start_service_button)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 updateUserLocations();
 
-            }
-        });
         Session session = new Session(getApplicationContext());
         sessionUsername = session.getUsername();
         usernames = new HashSet<>();
@@ -159,7 +159,15 @@ public class MainActivity extends AppCompatActivity
         startService(intent);
         serviceStarted=true;
         initializeBroadcastManagerForSocketIO();
-        adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, listOfMessages);
+//        adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, listOfMessages);
+
+        ((FloatingActionButton)findViewById(R.id.chat_button)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intentChat = new Intent(getApplicationContext(), chat.class);
+                startActivity(intentChat);
+            }
+        });
     }
 
 
@@ -351,14 +359,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void MessageReceivedThroughBroadcastManager(final String channel,final String type, final String message) {
-        /*runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                listOfMessages.add(message);
 
-                adapter.notifyDataSetChanged();
-            }
-        });*/
         try {
             if (type.equals(SocketManagementService.SERVER_TO_CLIENT_MESSAGE)) {
                 String[] data = message.split(" ");
