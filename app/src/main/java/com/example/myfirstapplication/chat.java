@@ -19,7 +19,7 @@ import java.util.ArrayList;
 
 public class chat extends AppCompatActivity implements BroadcastManagerCallerInterface {
 
-    boolean serviceStarted = false;
+    boolean serviceStarted = true;
     private ArrayList<String> listOfMessages=new ArrayList<>();
     private ArrayAdapter<String> adapter;
     private BroadcastManager broadcastManagerForSocketIO;
@@ -29,18 +29,18 @@ public class chat extends AppCompatActivity implements BroadcastManagerCallerInt
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        try {
-            Intent intent = new Intent(
-                    getApplicationContext(), SocketManagementService.class);
-            intent.putExtra("SERVER_HOST", "172.0.0.1");
-            intent.putExtra("SERVER_PORT", 8080);
-            intent.setAction(SocketManagementService.ACTION_CONNECT);
-            startService(intent);
-            serviceStarted = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(getApplicationContext(),"Error connecting to chat",Toast.LENGTH_SHORT).show();
-        }
+//        try {
+//            Intent intent = new Intent(
+//                    getApplicationContext(), SocketManagementService.class);
+//            intent.putExtra("SERVER_HOST", "172.0.0.1");
+//            intent.putExtra("SERVER_PORT", 8080);
+//            intent.setAction(SocketManagementService.ACTION_CONNECT);
+//            startService(intent);
+//            serviceStarted = true;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            Toast.makeText(getApplicationContext(),"Error connecting to chat",Toast.LENGTH_SHORT).show();
+//        }
         initializeBroadcastManagerForSocketIO();
         adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, listOfMessages);
 

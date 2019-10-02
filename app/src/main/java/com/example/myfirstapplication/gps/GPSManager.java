@@ -1,21 +1,27 @@
 package com.example.myfirstapplication.gps;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
+import android.os.ResultReceiver;
 import android.widget.Toast;
 
 import androidx.room.Room;
 
+import com.example.myfirstapplication.MainActivity;
 import com.example.myfirstapplication.database.AppDatabase;
 import com.example.myfirstapplication.model.Position;
+import com.example.myfirstapplication.webservice.MapService;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,10 +35,12 @@ public class GPSManager implements LocationListener {
     LocationManager locationManager;
 
     AppDatabase appDatabase;
-    int userId = 1;
+    String username = "demarchenac";
 
     Location actualLocation;
     Location lastTrack;
+
+    ResponseResultReceiver response;
 
     public GPSManager(Activity activity,
                       GPSManagerCallerInterface caller) {
@@ -59,7 +67,7 @@ public class GPSManager implements LocationListener {
             }
 
         }catch (Exception error){
-            caller.gpsErrorHasBeenThrown(error);
+            error.printStackTrace();
         }
     }
 
@@ -74,6 +82,7 @@ public class GPSManager implements LocationListener {
         }
     }
 
+    @SuppressLint("MissingPermission")
     public void startGPSRequesting(){
         try {
             locationManager.requestLocationUpdates(
@@ -84,27 +93,38 @@ public class GPSManager implements LocationListener {
                     0, 10, this, Looper.getMainLooper());
             actualLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
             lastTrack = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-            //this.saveLocation(actualLocation);
+            this.saveLocation(actualLocation);
 
         }catch (Exception error){
-            caller.gpsErrorHasBeenThrown(error);
+            error.printStackTrace();
+            //caller.gpsErrorHasBeenThrown(error);
         }
     }
 
     public void saveLocation(Location location){
         final Position position = new Position();
-        position.latitude = location.getLatitude();
-        position.longitude = location.getLongitude();
-        position.timestamp = new Date();
-        position.user_id = this.userId;
+        position.lat = ""+location.getLatitude();
+        position.lon = ""+location.getLongitude();
+        position.location_timestamp = new Date().toString();
+        position.username = this.username;
         try {
+            response = new ResponseResultReceiver(new Handler());
+            Intent serviceIntent = new Intent(activity.getApplicationContext(), MapService.class);
+            serviceIntent.putExtra("action", "SEND_LOCATION");
+            serviceIntent.putExtra("lat", position.lat);
+            serviceIntent.putExtra("lon", position.lon);
+            serviceIntent.putExtra("username", username);
+            serviceIntent.putExtra("receiver", response);
+            activity.startService(serviceIntent);
+
             AsyncTask.execute(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         appDatabase.PositionDao().insertAll(position);
+
                         List<Position> list = appDatabase.PositionDao().getAll();
-                        System.out.println(list);
+                         System.out.println(list);
                     } catch (Exception error){
                         error.printStackTrace();
                     }
@@ -144,4 +164,34 @@ public class GPSManager implements LocationListener {
     public void onProviderDisabled(String s) {
 
     }
+
+
+    private class ResponseResultReceiver extends ResultReceiver {
+        public ResponseResultReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData) {
+            switch (resultCode){
+                case MapService.ERROR:{
+                    Toast.makeText(activity, resultData.getString("response"), Toast.LENGTH_LONG).show();
+                    break;
+                }
+
+                case MapService.SUCCESS_SEND_LOCATION: {
+                    Toast.makeText(activity, "Location Updated", Toast.LENGTH_LONG).show();
+                    break;
+                }
+
+                case MapService.SUCCESS_GET_USERS_LOCATIONS: {
+                    break;
+                }
+            }
+            super.onReceiveResult(resultCode, resultData);
+        }
+    }
+
 }
+
+

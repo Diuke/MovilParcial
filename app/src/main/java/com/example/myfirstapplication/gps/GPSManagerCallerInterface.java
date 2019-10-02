@@ -6,5 +6,5 @@ public interface GPSManagerCallerInterface {
 
     void needPermissions();
     void locationHasBeenReceived(Location location);
-    void gpsErrorHasBeenThrown(Exception error);
+    //void gpsErrorHasBeenThrown(Exception error);
 }
