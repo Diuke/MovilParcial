@@ -15,6 +15,12 @@
     <string name="register_password_error">Please fill Password Field</string>
     <string name="register_confirm_password_error">Please fill Confirm Password Field</string>
     <string name="register_mismatch_error">Passwords do not match. Try Again</string>
+    <string name="register_error">Error on Register. Try Again</string>
+    <string name="user_exist_error">User already exist. Please change your username</string>
+    <string name="successful_user_creation">User created successfully</string>
+    <string name="login_password_error">Incorrect Password. Try Again</string>
+    <string name="successful_login">Login Successfully</string>
+    <string name="something_wrong">Something went wrong</string>
 
     <string name="menu_home">Home</string>
     <string name="menu_gallery">Gallery</string>
