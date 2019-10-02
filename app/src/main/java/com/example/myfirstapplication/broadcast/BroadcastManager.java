@@ -40,6 +40,7 @@ public class BroadcastManager extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String payload=intent.getExtras().getString("payload");
         String type=intent.getExtras().getString("type");
+        System.out.println("Recibido");
         caller.
                 MessageReceivedThroughBroadcastManager(
                         this.channel,type,payload);

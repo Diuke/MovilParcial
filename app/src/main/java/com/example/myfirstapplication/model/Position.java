@@ -10,7 +10,8 @@ import java.util.Date;
 
 @Entity(foreignKeys = @ForeignKey(entity = User.class,
         parentColumns = "username",
-        childColumns = "username"))
+        childColumns = "username",
+        onDelete = ForeignKey.CASCADE))
 public class Position {
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "position_id")

@@ -17,7 +17,7 @@ public class UserView {
         this.lastSeen = lastSeen;
         this.lat = lat;
         this.lon = lon;
-        this.status = status.equals("online");
+        this.status = status.equals("online") || status.equals("ONLINE");
         this.marker = null;
     }
 
