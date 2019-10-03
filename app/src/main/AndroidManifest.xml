@@ -20,6 +20,8 @@
 
         <activity android:name=".RegisterActivity" />
 
+        <activity android:name=".chat" />
+
         <service
             android:name=".network.SocketManagementService"
             android:exported="true" />
@@ -28,6 +30,9 @@
             android:enabled="true" />
         <service
             android:name=".webservice.LoginService"
+            android:enabled="true" />
+        <service
+            android:name=".webservice.MessageService"
             android:enabled="true" />
 
         <activity

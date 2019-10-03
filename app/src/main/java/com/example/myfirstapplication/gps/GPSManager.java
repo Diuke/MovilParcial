@@ -1,6 +1,7 @@
 package com.example.myfirstapplication.gps;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -13,10 +14,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ResultReceiver;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.room.Room;
 
+import com.example.myfirstapplication.R;
 import com.example.myfirstapplication.database.AppDatabase;
 import com.example.myfirstapplication.model.Position;
 import com.example.myfirstapplication.model.Session;
@@ -84,6 +87,7 @@ public class GPSManager implements LocationListener {
         }
     }
 
+    @SuppressLint("MissingPermission")
     public void startGPSRequesting(){
         try {
             locationManager.requestLocationUpdates(
@@ -177,13 +181,20 @@ public class GPSManager implements LocationListener {
         protected void onReceiveResult(int resultCode, Bundle resultData) {
             switch (resultCode){
                 case MapService.ERROR:{
+                    if(!resultData.getBoolean("connection")){
+                        TextView tv = activity.findViewById(R.id.status);
+                        tv.setText("STATUS: OFFLINE");
+                    }
                     Toast.makeText(activity, resultData.getString("response"), Toast.LENGTH_LONG).show();
                     break;
                 }
 
                 case MapService.SUCCESS_SEND_LOCATION: {
+                    TextView tv = activity.findViewById(R.id.status);
+                    tv.setText("STATUS: ONLINE");
                     Toast.makeText(activity, "Location Updated", Toast.LENGTH_LONG).show();
                     break;
+
                 }
 
                 case MapService.SUCCESS_GET_USERS_LOCATIONS: {

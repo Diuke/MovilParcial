@@ -3,6 +3,8 @@ package com.example.myfirstapplication.webservice;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.ResultReceiver;
@@ -18,7 +20,9 @@ import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.myfirstapplication.R;
+import com.example.myfirstapplication.model.Position;
 import com.example.myfirstapplication.model.Routes;
+import com.example.myfirstapplication.model.Track;
 import com.example.myfirstapplication.model.User;
 import com.example.myfirstapplication.model.UserView;
 
@@ -27,6 +31,7 @@ import org.json.JSONObject;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -38,6 +43,7 @@ public class MapService extends IntentService {
     public final static int ERROR = 1;
     public final static int SUCCESS_SEND_LOCATION = 2;
     public final static int SUCCESS_GET_USERS_LOCATIONS = 3;
+    public final static int SUCCESS_GET_TRACK = 4;
 
     RequestQueue rq;
     Routes routes;
@@ -50,8 +56,20 @@ public class MapService extends IntentService {
 
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
+        ConnectivityManager cm = (ConnectivityManager) getApplicationContext().
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+
+
         routes = new Routes();
         final ResultReceiver receiver = intent.getParcelableExtra("receiver");
+        Bundle bundle = new Bundle();
+        if(!isConnected){
+            bundle.putBoolean("connection", false);
+            receiver.send(ERROR, bundle);
+            return;
+        }
         String action = intent.getStringExtra("action");
         this.rq = Volley.newRequestQueue(getApplicationContext());
         switch (action){
@@ -67,8 +85,71 @@ public class MapService extends IntentService {
                 sendLocation(lat, lon, username, receiver);
                 break;
             }
+            case "LOCATION_TRACK":{
+                String startDate = intent.getStringExtra("startDate");
+                String endDate = intent.getStringExtra("endDate");
+                String username = intent.getStringExtra("username");
+                getTrack(startDate, endDate, username, receiver);
+                break;
+            }
         }
 
+    }
+
+    private void getTrack(String startDate, String endDate, String username, final ResultReceiver receiver) {
+        try {
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+            JSONObject body = new JSONObject();
+            body.put("first_value", startDate);
+            body.put("last_value", endDate);
+
+            JsonObjectRequest request = new JsonObjectRequest(
+                    Request.Method.POST, routes.routes.get("LOCATION")+"/"+username, body,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            System.out.println(response);
+                            try {
+                                String jsonString = response.getString("data").replaceAll("\\n", "");
+                                String stats[] = response.getString("errorMsg").split("/");
+                                String dist = stats[0];
+                                String speed = stats[1];
+                                JSONArray list = new JSONArray(jsonString);
+                                Bundle bundle = new Bundle();
+                                ArrayList<Track> track = new ArrayList<>();
+                                for(int i = 0; i < list.length(); i++){
+                                    JSONObject pos = list.getJSONObject(i);
+                                    double lat = pos.getDouble("lat");
+                                    double lon = pos.getDouble("lon");
+                                    String time_stamp = pos.getString("location_timestamp");
+                                    String username = pos.getString("username");
+                                    track.add(new Track(lat, lon, username, time_stamp));
+                                }
+                                bundle.putSerializable("track", track);
+                                bundle.putString("speed", speed);
+                                bundle.putString("distance", dist);
+                                receiver.send(SUCCESS_GET_TRACK, bundle);
+
+
+                            } catch (Exception error){
+                                error.printStackTrace();
+                            }
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            System.out.println(error.getMessage());
+                            Bundle bundle = new Bundle();
+                            bundle.putString("response", error.getMessage());
+                            bundle.putBoolean("connection", false);
+                            receiver.send(ERROR, bundle);
+                        }
+                    });
+            rq.add(request);
+        } catch (Exception error){
+            error.printStackTrace();
+        }
     }
 
     public MapService(){
@@ -138,6 +219,7 @@ public class MapService extends IntentService {
                             System.out.println(response);
                             Bundle bundle = new Bundle();
                             bundle.putString("response", "SUCCESS");
+                            bundle.putBoolean("connection", false);
                             receiver.send(SUCCESS_SEND_LOCATION, bundle);
                         }
                     },
@@ -147,6 +229,7 @@ public class MapService extends IntentService {
                             System.out.println(error.getMessage());
                             Bundle bundle = new Bundle();
                             bundle.putString("response", error.getMessage());
+                            bundle.putBoolean("connection", false);
                             receiver.send(ERROR, bundle);
                         }
                     }) {
