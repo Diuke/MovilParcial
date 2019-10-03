@@ -229,9 +229,10 @@ public class MainActivity extends AppCompatActivity
                             "No dates selected",Toast.LENGTH_SHORT).show();
                 } else {
                     ResponseResultReceiver response = new ResponseResultReceiver(new Handler());
+                    String asdf = (String)lv.getItemAtPosition(position);
                     Intent serviceIntent = new Intent(getApplicationContext(), MapService.class);
                     serviceIntent.putExtra("action", "LOCATION_TRACK");
-                    serviceIntent.putExtra("username", sessionUsername);
+                    serviceIntent.putExtra("username",asdf);
                     serviceIntent.putExtra("startDate", startDate);
                     serviceIntent.putExtra("endDate", endDate);
                     serviceIntent.putExtra("receiver", response);
@@ -542,11 +543,11 @@ public class MainActivity extends AppCompatActivity
                         TrackMarkers = new ArrayList<>();
                         ArrayList<Track> track = (ArrayList)resultData.getSerializable("track");
                         String speed = resultData.getString("speed");
-                        String distance = resultData.getString("dist");
+                        String distance = resultData.getString("distance");
                         TextView spd = findViewById(R.id.velocidad);
                         TextView dst = findViewById(R.id.distancia);
-                        spd.setText("Average speed:\n"+speed);
-                        dst.setText("Total distance:\n"+distance);
+                        spd.setText("Average speed:\n"+speed+"m/s");
+                        dst.setText("Total distance:\n"+distance+"m");
 
                         for(Track t :track){
                             Marker m = new Marker(map);
