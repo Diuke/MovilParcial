@@ -21,6 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,8 +34,7 @@ public class MessageService extends IntentService {
     RequestQueue requestQueue;
     Routes routes;
 
-    HashSet<String> messages;
-    HashSet<String> usernames;
+
 
     public MessageService() {
         super("MessageService");
@@ -109,23 +109,22 @@ public class MessageService extends IntentService {
                         System.out.println(response);
                         try {
                             String jsonString = response.getString("data").replaceAll("\\n", "");
+                            System.out.println(jsonString);
                             JSONArray list = new JSONArray(jsonString);
                             Bundle bundle = new Bundle();
-                            usernames = new HashSet<>();
-                            messages = new HashSet<>();
+                            ArrayList<String> messages;
+                            messages = new ArrayList<>();
                             for(int i = 0; i < list.length(); i++){
 
                                 JSONObject message = list.getJSONObject(i);
                                 UserView currentUser;
                                 String username = message.getString("sender");
                                 String msg = message.getString("body");
-                                usernames.add(username);
-                                messages.add(msg);
+                                messages.add(username+": "+msg);
 
                                 //updateMarker(currentUser);
                             }
                             bundle.putSerializable("messages", messages);
-                            bundle.putSerializable("usernames", usernames);
                             receiver.send(SUCCESS_GET_MESSAGES, bundle);
 
 

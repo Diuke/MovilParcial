@@ -23,6 +23,7 @@ import com.example.myfirstapplication.webservice.LoginService;
 import com.example.myfirstapplication.webservice.MessageService;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 public class chat extends AppCompatActivity implements BroadcastManagerCallerInterface {
@@ -58,9 +59,9 @@ public class chat extends AppCompatActivity implements BroadcastManagerCallerInt
 //        }
 
         initializeBroadcastManagerForSocketIO();
-        updateMessages();
         adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, listOfMessages);
         ((ListView)findViewById(R.id.messages_list_view)).setAdapter(adapter);
+        updateMessages();
         ((Button)findViewById(R.id.buttonSend)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -80,7 +81,7 @@ public class chat extends AppCompatActivity implements BroadcastManagerCallerInt
             Intent serviceIntent = new Intent(getApplicationContext(), MessageService.class);
             serviceIntent.putExtra("action", "GET_MESSAGES");
             serviceIntent.putExtra("receiver", response);
-            thisActivity.startService(serviceIntent);
+            startService(serviceIntent);
 
         }catch (Exception error){
             Toast.makeText(thisActivity, error.getMessage(),Toast.LENGTH_LONG).show();
@@ -146,11 +147,11 @@ public class chat extends AppCompatActivity implements BroadcastManagerCallerInt
             try {
                 switch (resultCode) {
                     case MessageService.SUCCESS_GET_MESSAGES: {
-                        HashSet<String> tempUsernames = (HashSet)resultData.getSerializable("usernames");
-                        HashSet<String> tempMessages = (HashSet)resultData.getSerializable("messages");
-                        for(String message : tempMessages){
-
-                            getMessages(message);
+                        ArrayList<String> tempMessages = (ArrayList) resultData.getSerializable("messages");
+                        ArrayList<String> finalMsg = new ArrayList<>();
+                        for (String user: tempMessages) {
+                            finalMsg.add(user);
+                            getMessages(user);
                         }
                         adapter.notifyDataSetChanged();
                         break;

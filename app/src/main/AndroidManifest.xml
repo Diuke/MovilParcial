@@ -31,6 +31,9 @@
         <service
             android:name=".webservice.LoginService"
             android:enabled="true" />
+        <service
+            android:name=".webservice.MessageService"
+            android:enabled="true" />
 
         <activity
             android:name=".MainActivity"
