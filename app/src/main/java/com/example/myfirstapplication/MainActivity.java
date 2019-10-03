@@ -2,6 +2,7 @@ package com.example.myfirstapplication;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -16,6 +17,7 @@ import com.example.myfirstapplication.gps.GPSManager;
 import com.example.myfirstapplication.gps.GPSManagerCallerInterface;
 import com.example.myfirstapplication.model.Routes;
 import com.example.myfirstapplication.model.Session;
+import com.example.myfirstapplication.model.Track;
 import com.example.myfirstapplication.model.UserView;
 import com.example.myfirstapplication.network.SocketManagementService;
 import com.example.myfirstapplication.webservice.MapService;
@@ -46,8 +48,10 @@ import android.view.Menu;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
 import org.osmdroid.api.IMapController;
@@ -58,8 +62,13 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
+import org.w3c.dom.Text;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -79,6 +88,11 @@ public class MainActivity extends AppCompatActivity
     HashMap<String, UserView> users;
     ArrayList<String> usernamesForListView;
     HashSet<String> usernames;
+
+    ArrayList<Marker> TrackMarkers;
+
+    String startDate;
+    String endDate;
 
     ListView lv;
 
@@ -112,6 +126,9 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        startDate = "";
+        endDate = "";
+
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
 
         NavigationView navigationView = findViewById(R.id.nav_view);
@@ -131,6 +148,70 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        final View dialogView1 = View.inflate(this, R.layout.date_time_picker, null);
+        final View dialogView2 = View.inflate(this, R.layout.date_time_picker2, null);
+        final AlertDialog alertDialog1 = new AlertDialog.Builder(this).create();
+        final AlertDialog alertDialog2 = new AlertDialog.Builder(this).create();
+
+        final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+
+        TextView date1 = findViewById(R.id.start_date);
+        date1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                alertDialog1.setView(dialogView1);
+                alertDialog1.show();
+            }
+        });
+        TextView date2 = findViewById(R.id.end_date);
+        date2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                alertDialog2.setView(dialogView2);
+                alertDialog2.show();
+            }
+        });
+
+        dialogView1.findViewById(R.id.date_time_set).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                DatePicker datePicker = (DatePicker) dialogView1.findViewById(R.id.date_picker);
+                TimePicker timePicker = (TimePicker) dialogView1.findViewById(R.id.time_picker);
+
+                Date calendar = new Date(datePicker.getYear()-1900,
+                        datePicker.getMonth(),
+                        datePicker.getDayOfMonth(),
+                        timePicker.getHour(),
+                        timePicker.getMinute());
+                startDate = formatter.format(calendar);
+                TextView date1 = findViewById(R.id.start_date);
+                date1.setText(startDate);
+
+                alertDialog1.dismiss();
+            }
+        });
+
+        dialogView2.findViewById(R.id.date_time_set2).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                DatePicker datePicker = (DatePicker) dialogView2.findViewById(R.id.date_picker2);
+                TimePicker timePicker = (TimePicker) dialogView2.findViewById(R.id.time_picker2);
+
+                Date calendar = new Date(datePicker.getYear()-1900,
+                        datePicker.getMonth(),
+                        datePicker.getDayOfMonth(),
+                        timePicker.getHour(),
+                        timePicker.getMinute());
+                endDate = formatter.format(calendar);
+                TextView date2 = findViewById(R.id.end_date);
+                date2.setText(endDate);
+
+                alertDialog2.dismiss();
+            }
+        });
+
         Session session = new Session(getApplicationContext());
         sessionUsername = session.getUsername();
         usernames = new HashSet<>();
@@ -143,7 +224,19 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position,
                                     long id) {
-                System.out.println("works");
+                if(startDate.equals("") || endDate.equals("")){
+                    Toast.makeText(thisActivity.getApplicationContext(),
+                            "No dates selected",Toast.LENGTH_SHORT).show();
+                } else {
+                    ResponseResultReceiver response = new ResponseResultReceiver(new Handler());
+                    Intent serviceIntent = new Intent(getApplicationContext(), MapService.class);
+                    serviceIntent.putExtra("action", "LOCATION_TRACK");
+                    serviceIntent.putExtra("username", sessionUsername);
+                    serviceIntent.putExtra("startDate", startDate);
+                    serviceIntent.putExtra("endDate", endDate);
+                    serviceIntent.putExtra("receiver", response);
+                    thisActivity.startService(serviceIntent);
+                }
             }
         });
         initializeDataBase();
@@ -421,7 +514,7 @@ public class MainActivity extends AppCompatActivity
                                 usernames.add(username);
                                 users.put(username, user);
                                 Marker marker = new Marker(map);
-                                marker.setTitle(username);
+                                marker.setTitle(username + "\n" + user.getLastSeen());
                                 map.getOverlays().add(marker);
                                 users.get(username).setMarker(marker);
                                 usernamesForListView.add(username);
@@ -436,6 +529,33 @@ public class MainActivity extends AppCompatActivity
                             updateMarker(user);
                         }
                         arrayAdapter.notifyDataSetChanged();
+                        break;
+                    }
+
+                    case MapService.SUCCESS_GET_TRACK:{
+                        if(TrackMarkers != null){
+                            for(Marker m : TrackMarkers){
+                                map.getOverlays().remove(m);
+                            }
+                        }
+
+                        TrackMarkers = new ArrayList<>();
+                        ArrayList<Track> track = (ArrayList)resultData.getSerializable("track");
+                        String speed = resultData.getString("speed");
+                        String distance = resultData.getString("dist");
+                        TextView spd = findViewById(R.id.velocidad);
+                        TextView dst = findViewById(R.id.distancia);
+                        spd.setText("Average speed:\n"+speed);
+                        dst.setText("Total distance:\n"+distance);
+
+                        for(Track t :track){
+                            Marker m = new Marker(map);
+                            m.setTitle(t.getUsername() + "\n" + t.getLocation_timestamp());
+                            m.setPosition(new GeoPoint(t.getLat(), t.getLon()));
+                            m.setIcon(getApplicationContext().getResources().getDrawable(R.drawable.ic_track));
+                            map.getOverlays().add(m);
+                            TrackMarkers.add(m);
+                        }
                         break;
                     }
                 }
